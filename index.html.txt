@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROTER SALON</title>
+  <style>
+    @font-face {
+      font-family: 'Gäbenbach';
+      src: url('Gaebenbach.woff2') format('woff2');
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background-color: #ff2400;
+      color: black;
+      font-family: 'Gäbenbach', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: invertColors 0.4s infinite steps(1);
+      cursor: default;
+    }
+
+    @keyframes invertColors {
+      0% {
+        background-color: #ff2400;
+        color: black;
+      }
+      50% {
+        background-color: black;
+        color: #ff2400;
+      }
+      100% {
+        background-color: #ff2400;
+        color: black;
+      }
+    }
+
+    h1 {
+      font-size: 10vw;
+      letter-spacing: 0.1em;
+      border: 5px solid currentColor;
+      padding: 1rem 2rem;
+      margin: 0;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>ROTER SALON</h1>
+</body>
+</html>
