@@ -9,7 +9,6 @@
       font-family: 'Gäbenbach';
       src: url('Gaebenbach.woff2') format('woff2');
     }
-
     html, body {
       margin: 0;
       padding: 0;
@@ -22,9 +21,10 @@
       align-items: center;
       justify-content: center;
       animation: invertColors 0.4s infinite steps(1);
-      cursor: default;
+      cursor: none; /* Versteckt den Standard-Cursor */
     }
-
+    
+    /* Animation für den Farbwechsel der Website */
     @keyframes invertColors {
       0% {
         background-color: #ff2400;
@@ -39,7 +39,7 @@
         color: black;
       }
     }
-
+    
     h1 {
       font-size: 10vw;
       letter-spacing: 0.1em;
@@ -48,9 +48,73 @@
       margin: 0;
       text-align: center;
     }
+    
+    .cursor {
+      position: fixed;
+      width: 64px;
+      height: 64px;
+      pointer-events: none;
+      z-index: 1000;
+      /* Fallback für fehlende Sprite-Datei */
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M30,70l-10-5l-5,10l-5-15l10-5l-5-10l15-5l5,15l10-5l5,15l-15,5L30,70z' fill='%23000'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
+      transform: translate(-50%, -50%); /* Zentriert den Cursor auf den Mauszeiger */
+      animation: invertGallop 0.4s infinite steps(1);
+    }
+    
+    /* Wenn das Pferde-Sprite verfügbar ist */
+    .galloping-cursor {
+      background-image: url('cursor-sprite.png');
+      background-size: 300% 100%;
+      /* Kombiniert die Gallop-Animation mit dem synchronen Farbwechsel */
+      animation: gallop 0.4s steps(3) infinite, invertGallop 0.4s infinite steps(1);
+    }
+    
+    /* Animation für das Gallop-Sprite - drei Bilder nebeneinander durchlaufen */
+    @keyframes gallop {
+      0% { background-position: 0% 0%; }
+      100% { background-position: -300% 0%; }
+    }
+    
+    /* Animation für den Farbwechsel des Cursors - synchron mit dem Website-Farbwechsel */
+    @keyframes invertGallop {
+      0%, 100% { filter: invert(0); } /* Schwarzes Pferd auf rotem Hintergrund */
+      50% { filter: invert(1); } /* Rotes Pferd auf schwarzem Hintergrund */
+    }
   </style>
 </head>
 <body>
+  <div class="cursor" id="cursor"></div>
   <h1>ROTER SALON</h1>
+  <script>
+    const cursor = document.getElementById('cursor');
+    
+    // Funktion zum Bewegen des Cursors
+    document.addEventListener('mousemove', e => {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top = e.clientY + 'px';
+    });
+    
+    // Prüfe, ob das Pferde-Sprite geladen werden kann
+    function checkImage(imageSrc, onSuccess, onError) {
+      const img = new Image();
+      img.onload = onSuccess;
+      img.onerror = onError;
+      img.src = imageSrc;
+    }
+    
+    // Versuche, das Pferde-Sprite zu laden
+    checkImage('cursor-sprite.png', 
+      // Wenn erfolgreich, füge die galloping-cursor Klasse hinzu
+      function() {
+        cursor.classList.add('galloping-cursor');
+      },
+      // Wenn fehlgeschlagen, behalte den SVG-Fallback
+      function() {
+        console.log('Pferde-Sprite konnte nicht geladen werden, verwende Fallback');
+      }
+    );
+  </script>
 </body>
 </html>
