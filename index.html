@@ -98,6 +98,16 @@
       50% { filter: invert(1); }
     }
   </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0"
+  }
+}
+</script>
 </head>
 <body>
   <!-- Fallback-Cursor -->
@@ -130,7 +140,18 @@
     
     let currentHorseIndex = 0;
     let colorPhase = 0; // 0 = schwarz auf rot, 1 = rot auf schwarz
+    let isPaused = false; // Zustand für die Pausierung
     
+    // Funktion zum Umschalten des Pausenzustands bei Klick
+    document.addEventListener('click', () => {
+      isPaused = !isPaused;
+      const playState = isPaused ? 'paused' : 'running';
+      // CSS-Animation für den Hintergrund pausieren oder fortsetzen.
+      // Muss auf html und body angewendet werden, um die gesamte Fläche abzudecken.
+      document.documentElement.style.animationPlayState = playState;
+      document.body.style.animationPlayState = playState;
+    });
+
     // Funktion zum Bewegen des Cursors
     document.addEventListener('mousemove', e => {
       cursor.style.left = e.clientX + 'px';
@@ -229,7 +250,8 @@
       horseContainers[0].style.display = 'block';
       updateHorseColors();
       
-      // Wechsle die Pferde alle 0.4 Sekunden
+      // Wechsle die Pferde alle 0.4 Sekunden (Sprite-Animation)
+      // Diese Animation läuft immer, unabhängig vom Pausenzustand
       setInterval(() => {
         // Verstecke alle Pferde
         horseContainers.forEach(container => container.style.display = 'none');
@@ -242,7 +264,11 @@
       }, 400);
       
       // Wechsle die Farben alle 0.4 Sekunden (synchron mit Hintergrund)
+      // Diese Logik wird im Pausenzustand übersprungen
       setInterval(() => {
+        if (isPaused) {
+          return; // Im Pausenzustand keine Farbwechsel durchführen
+        }
         colorPhase = (colorPhase + 1) % 2;
         updateHorseColors();
       }, 400);
