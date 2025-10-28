@@ -21,7 +21,7 @@
       align-items: center;
       justify-content: center;
       animation: invertColors 0.4s infinite steps(1);
-      cursor: none; /* Versteckt den Standard-Cursor */
+      cursor: none;
     }
     
     /* Animation für den Farbwechsel der Website */
@@ -55,32 +55,47 @@
       height: 64px;
       pointer-events: none;
       z-index: 1000;
-      /* Fallback für fehlende Sprite-Datei */
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M30,70l-10-5l-5,10l-5-15l10-5l-5-10l15-5l5,15l10-5l5,15l-15,5L30,70z' fill='%23000'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-size: 100% 100%;
-      transform: translate(-50%, -50%); /* Zentriert den Cursor auf den Mauszeiger */
-      animation: invertGallop 0.4s infinite steps(1);
-      transition: background-position 0.05s ease; /* Sanfter Übergang für Sprite-Position */
+      transform: translate(-50%, -50%);
+      animation: invertCursor 0.4s infinite steps(1);
     }
     
-    /* Separate Stil-Deklarationen für direkten HTML-Zugriff via JavaScript */
-    #horse1, #horse2, #horse3 {
+    /* Container für Pferd-Body und Auge */
+    .horse-container {
       position: fixed;
       width: 64px;
       height: 64px;
       pointer-events: none;
       z-index: 1000;
-      background-repeat: no-repeat;
-      background-size: 100% 100%;
       transform: translate(-50%, -50%);
-      display: none; /* Standardmäßig ausgeblendet */
+      display: none;
     }
     
-    /* Animation für den Farbwechsel des Cursors - synchron mit dem Website-Farbwechsel */
-    @keyframes invertGallop {
-      0%, 100% { filter: invert(0); } /* Schwarzes Pferd auf rotem Hintergrund */
-      50% { filter: invert(1); } /* Rotes Pferd auf schwarzem Hintergrund */
+    /* Pferdekörper - wechselt zwischen schwarz und rot */
+    .horse-body {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
+      mix-blend-mode: normal;
+    }
+    
+    /* Auge - immer invertiert zum Körper */
+    .horse-eye {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
+      mix-blend-mode: difference; /* Dieser Mix-Blend-Mode invertiert die Farbe */
+    }
+    
+    @keyframes invertCursor {
+      0%, 100% { filter: invert(0); }
+      50% { filter: invert(1); }
     }
   </style>
 </head>
@@ -88,137 +103,180 @@
   <!-- Fallback-Cursor -->
   <div class="cursor" id="cursor"></div>
   
-  <!-- Pferde-Sprites als separate Elemente für bessere Kontrolle -->
-  <div id="horse1" style="display: none;"></div>
-  <div id="horse2" style="display: none;"></div>
-  <div id="horse3" style="display: none;"></div>
+  <!-- Pferde-Container mit separaten Körper- und Augen-Layern -->
+  <div class="horse-container" id="horse1">
+    <div class="horse-body" id="horse1-body"></div>
+    <div class="horse-eye" id="horse1-eye"></div>
+  </div>
+  <div class="horse-container" id="horse2">
+    <div class="horse-body" id="horse2-body"></div>
+    <div class="horse-eye" id="horse2-eye"></div>
+  </div>
+  <div class="horse-container" id="horse3">
+    <div class="horse-body" id="horse3-body"></div>
+    <div class="horse-eye" id="horse3-eye"></div>
+  </div>
   
   <h1>ROTER SALON</h1>
   
   <script>
     // DOM-Elemente
     const cursor = document.getElementById('cursor');
-    const horse1 = document.getElementById('horse1');
-    const horse2 = document.getElementById('horse2');
-    const horse3 = document.getElementById('horse3');
+    const horseContainers = [
+      document.getElementById('horse1'),
+      document.getElementById('horse2'),
+      document.getElementById('horse3')
+    ];
     
-    // Pferd-Frames und Animation
-    let horseImages = [];
     let currentHorseIndex = 0;
-    let horses = [horse1, horse2, horse3];
-    let animationActive = false;
-    let animationFrame;
+    let colorPhase = 0; // 0 = schwarz auf rot, 1 = rot auf schwarz
     
     // Funktion zum Bewegen des Cursors
     document.addEventListener('mousemove', e => {
-      // Bewege alle Cursor-Elemente
       cursor.style.left = e.clientX + 'px';
       cursor.style.top = e.clientY + 'px';
       
-      horses.forEach(horse => {
-        horse.style.left = e.clientX + 'px';
-        horse.style.top = e.clientY + 'px';
+      horseContainers.forEach(container => {
+        container.style.left = e.clientX + 'px';
+        container.style.top = e.clientY + 'px';
       });
     });
     
-    // Funktion zum Extrahieren von Einzelbildern aus dem Sprite
-    function extractFramesFromSprite(img) {
+    // Funktion zum Erstellen eines Canvas mit Pferd ohne Auge
+    function createHorseBodyCanvas(img, frameIndex) {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       
-      // Setze Größe für ein Drittel des Sprites
       const frameWidth = img.width / 3;
       const frameHeight = img.height;
       canvas.width = frameWidth;
       canvas.height = frameHeight;
       
-      // Extrahiere jedes Pferd-Frame und erstelle ein separates Bild
-      for (let i = 0; i < 3; i++) {
-        ctx.clearRect(0, 0, frameWidth, frameHeight);
-        ctx.drawImage(
-          img,                  // Quellelement
-          i * frameWidth, 0,    // Quellposition
-          frameWidth, frameHeight, // Quellgröße
-          0, 0,                 // Zielposition
-          frameWidth, frameHeight  // Zielgröße
-        );
-        
-        // Verwende Data-URL für die einzelnen Frames
-        const dataURL = canvas.toDataURL();
-        horseImages.push(dataURL);
-      }
+      // Zeichne das komplette Pferd
+      ctx.drawImage(
+        img,
+        frameIndex * frameWidth, 0,
+        frameWidth, frameHeight,
+        0, 0,
+        frameWidth, frameHeight
+      );
       
-      // Setze die anfänglichen Bilder für die Pferd-Elemente
-      horses.forEach((horse, index) => {
-        horse.style.backgroundImage = `url('${horseImages[index]}')`;
-        horse.style.animation = 'invertGallop 0.4s infinite steps(1)';
-      });
-      
-      // Starte die Animation
-      startHorseAnimation();
+      return canvas.toDataURL();
     }
     
-    // Funktion zum Animieren der Pferde-Frames
+    // Funktion zum Erstellen eines Canvas nur mit dem Auge
+    function createHorseEyeCanvas(img, frameIndex) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      const frameWidth = img.width / 3;
+      const frameHeight = img.height;
+      canvas.width = frameWidth;
+      canvas.height = frameHeight;
+      
+      // Zeichne das komplette Pferd
+      ctx.drawImage(
+        img,
+        frameIndex * frameWidth, 0,
+        frameWidth, frameHeight,
+        0, 0,
+        frameWidth, frameHeight
+      );
+      
+      // Hole die Bilddaten
+      const imageData = ctx.getImageData(0, 0, frameWidth, frameHeight);
+      const data = imageData.data;
+      
+      // Suche nach dem weißen Punkt (Auge) und behalte nur diesen
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        
+        // Wenn es nicht weiß ist (das Auge), mache es transparent
+        if (r < 200 || g < 200 || b < 200) {
+          data[i + 3] = 0; // Alpha auf 0 setzen
+        }
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+      return canvas.toDataURL();
+    }
+    
+    // Funktion zum Anwenden der Farben basierend auf dem Hintergrund
+    function updateHorseColors() {
+      horseContainers.forEach((container, index) => {
+        const body = container.querySelector('.horse-body');
+        const eye = container.querySelector('.horse-eye');
+        
+        if (colorPhase === 0) {
+          // Roter Hintergrund: schwarzes Pferd mit rotem Auge
+          body.style.filter = 'brightness(0) saturate(100%)'; // Schwarz
+          eye.style.filter = 'brightness(0) saturate(100%) invert(21%) sepia(100%) saturate(7426%) hue-rotate(357deg) brightness(106%) contrast(118%)'; // Rot
+        } else {
+          // Schwarzer Hintergrund: rotes Pferd mit schwarzem Auge
+          body.style.filter = 'brightness(0) saturate(100%) invert(21%) sepia(100%) saturate(7426%) hue-rotate(357deg) brightness(106%) contrast(118%)'; // Rot
+          eye.style.filter = 'brightness(0) saturate(100%)'; // Schwarz
+        }
+      });
+    }
+    
+    // Funktion zum Starten der Animation
     function startHorseAnimation() {
-      animationActive = true;
-      // Verstecke den Standard-Cursor
       cursor.style.display = 'none';
       
-      let frameCount = 0;
-      const framesPerHorse = 3; // Anzahl der Frames, die jedes Pferd gezeigt wird
+      // Zeige das erste Pferd
+      horseContainers[0].style.display = 'block';
+      updateHorseColors();
       
-      // Animation-Loop
-      function animate() {
+      // Wechsle die Pferde alle 0.4 Sekunden
+      setInterval(() => {
         // Verstecke alle Pferde
-        horses.forEach(horse => horse.style.display = 'none');
+        horseContainers.forEach(container => container.style.display = 'none');
         
-        // Zeige nur das aktuelle Pferd
-        horses[currentHorseIndex].style.display = 'block';
+        // Wechsle zum nächsten Pferd
+        currentHorseIndex = (currentHorseIndex + 1) % 3;
         
-        // Erhöhe den Frame-Zähler
-        frameCount++;
-        
-        // Wechsle nach bestimmter Anzahl von Frames zum nächsten Pferd
-        if (frameCount >= framesPerHorse) {
-          frameCount = 0;
-          currentHorseIndex = (currentHorseIndex + 1) % 3;
-        }
-        
-        // Loop für die Animation
-        animationFrame = requestAnimationFrame(animate);
-      }
+        // Zeige das aktuelle Pferd
+        horseContainers[currentHorseIndex].style.display = 'block';
+      }, 400);
       
-      // Starte die Animation
-      animate();
+      // Wechsle die Farben alle 0.4 Sekunden (synchron mit Hintergrund)
+      setInterval(() => {
+        colorPhase = (colorPhase + 1) % 2;
+        updateHorseColors();
+      }, 400);
     }
     
-    // Funktion zum Laden und Verarbeiten des Sprites
+    // Funktion zum Laden des Sprites
     function loadHorseSprite() {
       const img = new Image();
       
       img.onload = function() {
-        extractFramesFromSprite(img);
+        // Erstelle Body und Eye für jedes Pferd
+        for (let i = 0; i < 3; i++) {
+          const bodyData = createHorseBodyCanvas(img, i);
+          const eyeData = createHorseEyeCanvas(img, i);
+          
+          const body = document.getElementById(`horse${i + 1}-body`);
+          const eye = document.getElementById(`horse${i + 1}-eye`);
+          
+          body.style.backgroundImage = `url('${bodyData}')`;
+          eye.style.backgroundImage = `url('${eyeData}')`;
+        }
+        
+        startHorseAnimation();
       };
       
       img.onerror = function() {
         console.log('Pferde-Sprite konnte nicht geladen werden, verwende Fallback');
-        // Stelle sicher, dass der Fallback-Cursor sichtbar ist
         cursor.style.display = 'block';
       };
       
-      // Lade das Sprite
       img.src = 'cursor-sprite.png';
     }
     
-    // Starte den Ladevorgang für das Sprite
     loadHorseSprite();
-    
-    // Bereinigung bei Seitenende
-    window.addEventListener('beforeunload', () => {
-      if (animationActive) {
-        cancelAnimationFrame(animationFrame);
-      }
-    });
   </script>
 </body>
 </html>
